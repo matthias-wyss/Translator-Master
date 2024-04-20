@@ -1,51 +1,113 @@
-# Telegram bots and APIs, [SLIDES](https://go.epfl.ch/telegram-apis)
+# README - Translator Master Bot
 
-First used at a [mini-hackathon](https://lu.ma/lauzhack-apis-2023) (Nov 11, 2023).
+Translator Master is a Telegram bot designed to facilitate language translation tasks seamlessly within the Telegram platform. This README provides essential information on how to set up and use the Translator Master bot effectively.
 
-Slides and recordings can be found here: https://go.epfl.ch/telegram-apis
+## Bot Access
+You can access the Translator Master bot via Telegram by searching for `@test_translator_master_bot`.
 
 ## Installation
+To get started with Translator Master, follow these steps:
+1. Clone the repository to your local machine.
+2. Navigate to the project directory.
+3. Install the required dependencies by executing:
+    ```
+    pip install -r requirements.txt
+    ```
 
-```bash
-# 1) create and activate virtual environment
-# -- EITHER with conda
-conda create -n apis_env python=3.11
-conda activate apis_env
-# -- OR with venv
-python3.11 -m venv apis_env
-source apis_env/bin/activate
+## Usage
+Once you have installed the necessary dependencies, you can launch the bot by running the `telegram_bot.py` script. This will activate the bot and enable its functionalities.
 
-# 2) install dependencies
-(apis_env) pip install -r requirements.txt
-```
+### Commands
+Translator Master supports the following commands:
 
-## Usage 
+1. **text2text**:
+   - Description: Translates a text input into the specified target language.
+   - Usage: `/text2text [text] [target_language]`
+   - Example: `/text2text Hello, how are you? fr_XX`
 
-1. Follow along the slides on making a Telegram bot and APIs: [link](https://docs.google.com/presentation/d/1IedczIb_IedU-NWEnH4qHZCaX985zEsptzePF3b_vHA/edit?usp=sharing).
-2. Dive deeper with a specific bot - [PaperBoat](https://github.com/lucafusarbassini/paperboat) - to learn about about OpenAI, LangChain, and scrapping: [link](https://docs.google.com/presentation/d/1Otleuoi5-TfD3YCz1cS0k9MF-Tp7_E0Z/edit?usp=drive_link&ouid=115816041756434628590&rtpof=true&sd=true).
+2. **text2speech**:
+   - Description: Translates a text input into speech in the specified target language.
+   - Usage: `/text2speech [text] [target_language]`
+   - Example: `/text2speech Hello, how are you? fr_XX`
 
-## On IC Cluster (RunAI)
+3. **speech2text**:
+   - Description: Translates speech input into text in the specified target language.
+   - Usage: `/speech2text [audio_file] [target_language]`
+   - Example: `/speech2text [audio_file] fr_XX`
 
-From root of [this repo](https://github.com/epfml/getting-started-lauzhack/?tab=readme-ov-file#4-use-this-repo-to-start-a-llm-training-run-with-your-fork-of-the-llm-baselines-code), create a pod:
-```bash
-python csub.py -n sandbox
-# runai list   # to check the status
+4. **speech2speech**:
+   - Description: Translates speech input into speech in the specified target language.
+   - Usage: `/speech2speech [audio_file] [target_language]`
+   - Example: `/speech2speech [audio_file] fr_XX`
 
-# when it is running, connect to pod to be insite a Terminal!
-runai exec sandbox -it -- zsh
+Note: Replace `[text]`, `[target_language]`, and `[audio_file]` with appropriate inputs.
 
-# clone repo inside home folder
-cd /mloscratch/<your_username>
-git clone https://github.com/<your username>/apis-telegram.git
-cd apis-telegram
+## Languages Covered
 
-# install dependencies
-pip install -r requirements.txt
-```
+Translator Master supports translation to and from the following languages:
 
-Connecting with VScode: https://github.com/epfml/getting-started-lauzhack/?tab=readme-ov-file#using-vscode
+- Arabic (ar_AR)
+- Czech (cs_CZ)
+- German (de_DE)
+- English (en_XX)
+- Spanish (es_XX)
+- Estonian (et_EE)
+- Finnish (fi_FI)
+- French (fr_XX)
+- Gujarati (gu_IN)
+- Hindi (hi_IN)
+- Italian (it_IT)
+- Japanese (ja_XX)
+- Kazakh (kk_KZ)
+- Korean (ko_KR)
+- Lithuanian (lt_LT)
+- Latvian (lv_LV)
+- Burmese (my_MM)
+- Nepali (ne_NP)
+- Dutch (nl_XX)
+- Romanian (ro_RO)
+- Russian (ru_RU)
+- Sinhala (si_LK)
+- Turkish (tr_TR)
+- Vietnamese (vi_VN)
+- Chinese (zh_CN)
+- Afrikaans (af_ZA)
+- Azerbaijani (az_AZ)
+- Bengali (bn_IN)
+- Persian (fa_IR)
+- Hebrew (he_IL)
+- Croatian (hr_HR)
+- Indonesian (id_ID)
+- Georgian (ka_GE)
+- Khmer (km_KH)
+- Macedonian (mk_MK)
+- Malayalam (ml_IN)
+- Mongolian (mn_MN)
+- Marathi (mr_IN)
+- Polish (pl_PL)
+- Pashto (ps_AF)
+- Portuguese (pt_XX)
+- Swedish (sv_SE)
+- Swahili (sw_KE)
+- Tamil (ta_IN)
+- Telugu (te_IN)
+- Thai (th_TH)
+- Tagalog (tl_XX)
+- Ukrainian (uk_UA)
+- Urdu (ur_PK)
+- Xhosa (xh_ZA)
+- Galician (gl_ES)
+- Slovene (sl_SI)
 
-Launching bot!
-```bash
-python3 telegram_gpt.py
-```
+Translator Master is capable of translating to and from these languages seamlessly, providing a comprehensive solution for multilingual communication needs.
+
+
+## APIs Used
+Translator Master utilizes the following APIs for its translation services:
+- Hugging Face
+- OpenAI
+
+## Feedback and Support
+For any feedback, suggestions, or issues encountered while using the Translator Master bot, please feel free to contact us. Your feedback is valuable for improving the bot's performance and user experience.
+
+Thank you for using Translator Master!
