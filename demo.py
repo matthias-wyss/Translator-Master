@@ -10,15 +10,16 @@ Press Ctrl-C on the command line to stop the bot.
 
 import logging
 
-from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram import ForceReply, Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, ConversationHandler
 from keys import TELEGRAM_KEY
 
 from PIL import Image
 import numpy as np
 import audiofile
 from pdfrw import PdfReader
-import text2text 
+from text_to_text import text_to_text
+from detect_language import detect_language
 
 # Enable logging
 logging.basicConfig(
@@ -28,6 +29,8 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
+
+text, language_out = range(2)
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -162,10 +165,35 @@ async def how_are_you(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     responses = ["Fine", "Good", "Bad", "So so"]
     await update.message.reply_text(np.random.choice(responses))
     
-async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Translate a text2text translation"""
-    await update.message.reply_text("Please insert the text you want to translate")
+async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text('Insert text')
+    user = update.message.from_user
+    return text
     
+async def ask_text(update: Update, context: ContextTypes.DEFAULT_TYPE)-> int :
+    user = update.message.from_user
+    logger.info("text of %s: %s", user.first_name, update.message.text)
+    return language_out
+    
+async def ask_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
+    user = update.message.from_user
+    logger.info("text of %s: %s", user.first_name, update.message.text)
+    reply_keyboard = [["FR", "EN", "DE", "IT"]]
+    await update.message.reply_text(
+        "In what language do you want to translate your text",
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True, input_field_placeholder="Language ?"
+        ),)
+    
+    return ConversationHandler.END
+    
+
+    
+async def translate(update: Update, context: ContextTypes.DEFAULT_TYPE)-> None:
+    language_in = detect_language(ConversationHandler.states[text])
+    text_translated = text_to_text(ConversationHandler.states[text], language_in, ConversationHandler.states[language_out])
+    await update.message.reply_text(text_translated)
+    return ConversationHandler.END
     
 
 def main() -> None:
@@ -180,9 +208,11 @@ def main() -> None:
     # menu commands
     application.add_handler(CommandHandler("timer", set_timer))
     application.add_handler(CommandHandler("howareyou", how_are_you))
+    # Start text2text translation
+    application.add_handler(CommandHandler("text2text", text2text))
 
     # on non command i.e message - echo the message on Telegram
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+    #application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
     # photo input
     application.add_handler(
@@ -203,13 +233,23 @@ def main() -> None:
     application.add_handler(
         MessageHandler(filters.ATTACHMENT & ~filters.COMMAND, attachment, block=True)
     )
+    
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("text2text", text2text)],
+        states={
+            text: [MessageHandler(filters.TEXT, ask_language)],
+            language_out: [MessageHandler(filters.Regex("^(FR|EN|DE|IT)$"), ask_language)],
+        },
+        fallbacks=[MessageHandler(filters.COMMAND, translate)],
+    )
+
+    application.add_handler(conv_handler)
+
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
     
-    # Start text2text translation
-    application.add_handler(CommandHandler, text2text)
-
+    
 
 if __name__ == "__main__":
     main()
