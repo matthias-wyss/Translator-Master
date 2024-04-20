@@ -18,6 +18,7 @@ from PIL import Image
 import numpy as np
 import audiofile
 from pdfrw import PdfReader
+import text2text 
 
 # Enable logging
 logging.basicConfig(
@@ -160,7 +161,12 @@ async def how_are_you(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     """Select from randomly from set responses."""
     responses = ["Fine", "Good", "Bad", "So so"]
     await update.message.reply_text(np.random.choice(responses))
-
+    
+async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Translate a text2text translation"""
+    await update.message.reply_text("Please insert the text you want to translate")
+    
+    
 
 def main() -> None:
     """Start the bot."""
@@ -200,6 +206,9 @@ def main() -> None:
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
+    
+    # Start text2text translation
+    application.add_handler(CommandHandler, text2text)
 
 
 if __name__ == "__main__":
