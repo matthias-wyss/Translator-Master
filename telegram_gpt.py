@@ -27,7 +27,7 @@ import torch
 
 MAX_CHAT_HISTORY = 10
 VERBOSE = True
-LOCAL_ASR = False
+LOCAL_ASR = True
 CUDA_AVAILABLE = torch.cuda.is_available()
 
 

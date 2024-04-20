@@ -10,14 +10,16 @@ Press Ctrl-C on the command line to stop the bot.
 
 import logging
 
-from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram import ForceReply, Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, ConversationHandler
 from keys import TELEGRAM_KEY
 
 from PIL import Image
 import numpy as np
 import audiofile
 from pdfrw import PdfReader
+from text_to_text import text_to_text
+from detect_language import detect_language
 
 # Enable logging
 logging.basicConfig(
@@ -28,6 +30,10 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
+TEXT, LANGUAGEOUT = range(2)
+
+conversion = {'DE': 'de_DE', 'FR': 'fr_XX', 'EN': 'en_XX', 'IT': 'it_IT'}
+translation = {'text' : None, 'language': None}
 
 # Define a few command handlers. These usually take the two arguments update and
 # context.
@@ -160,12 +166,54 @@ async def how_are_you(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     """Select from randomly from set responses."""
     responses = ["Fine", "Good", "Bad", "So so"]
     await update.message.reply_text(np.random.choice(responses))
+    
+async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Insert text",
+        reply_markup=ReplyKeyboardRemove(),
+    )
+    return TEXT
+    
+async def ask_text(update: Update, context: ContextTypes.DEFAULT_TYPE)-> int :
+    user = update.message.from_user
+    logger.info("text of %s: %s", user.first_name, update.message.text)
+    translation['text'] = update.message.text
+    reply_keyboard = [["FR", "EN", "DE", "IT"]]
+    await update.message.reply_text(
+        "In what language do you want to translate your text",
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True, input_field_placeholder="Language ?"
+        ),)
+    return LANGUAGEOUT
+    
+async def ask_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
+    user = update.message.from_user
+    logger.info("language of %s: %s", user.first_name, update.message.text)
+    translation['language'] = conversion[update.message.text]
+    language_in = conversion[detect_language(translation['text'])[0].upper()]
+    text_translated = text_to_text(translation['text'], language_in, translation['language'])
+    await update.message.reply_text(text_translated)
+    return ConversationHandler.END
+
+
+
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Cancels and ends the conversation."""
+    user = update.message.from_user
+    logger.info("User %s canceled the conversation.", user.first_name)
+    await update.message.reply_text(
+        "Bye! I hope we can talk again some day.", reply_markup=ReplyKeyboardRemove()
+    )
+
+    return ConversationHandler.END
+
 
 
 def main() -> None:
     """Start the bot."""
     # Create the Application and pass it your bot's token.
     application = Application.builder().token(TELEGRAM_KEY).build()
+
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("start", start))
@@ -176,7 +224,7 @@ def main() -> None:
     application.add_handler(CommandHandler("howareyou", how_are_you))
 
     # on non command i.e message - echo the message on Telegram
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+    #application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
     # photo input
     application.add_handler(
@@ -197,10 +245,25 @@ def main() -> None:
     application.add_handler(
         MessageHandler(filters.ATTACHMENT & ~filters.COMMAND, attachment, block=True)
     )
+    
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("text2text", text2text)],
+        states={
+            TEXT: [MessageHandler(filters.TEXT, ask_text)],
+            LANGUAGEOUT: [MessageHandler(filters.Regex("^(FR|EN|DE|IT)$"), ask_language)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+
+    application.add_handler(conv_handler)
+
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
-
+    
+    
 
 if __name__ == "__main__":
     main()
+    
+    
