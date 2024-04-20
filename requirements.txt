@@ -1,4 +1,4 @@
-python-telegram-bot[job-queue] --pre
+python-telegram-bot==13.0
 audiofile
 librosa
 pdfrw
@@ -9,3 +9,4 @@ Pillow
 transformers
 torch
 openai
+datetime
