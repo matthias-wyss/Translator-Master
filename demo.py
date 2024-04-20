@@ -32,7 +32,8 @@ logger = logging.getLogger(__name__)
 
 TEXT, LANGUAGEOUT = range(2)
 
-
+conversion = {'DE': 'de_DE', 'FR': 'fr_XX', 'EN': 'en_XX', 'IT': 'it_IT'}
+translation = {'text' : None, 'language': None}
 
 # Define a few command handlers. These usually take the two arguments update and
 # context.
@@ -176,6 +177,7 @@ async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def ask_text(update: Update, context: ContextTypes.DEFAULT_TYPE)-> int :
     user = update.message.from_user
     logger.info("text of %s: %s", user.first_name, update.message.text)
+    translation['text'] = update.message.text
     reply_keyboard = [["FR", "EN", "DE", "IT"]]
     await update.message.reply_text(
         "In what language do you want to translate your text",
@@ -187,8 +189,9 @@ async def ask_text(update: Update, context: ContextTypes.DEFAULT_TYPE)-> int :
 async def ask_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     user = update.message.from_user
     logger.info("language of %s: %s", user.first_name, update.message.text)
-    language_in = detect_language(ConversationHandler.states[TEXT])
-    text_translated = text_to_text(ConversationHandler.states[TEXT], language_in, ConversationHandler.states[LANGUAGEOUT])
+    translation['language'] = conversion[update.message.text]
+    language_in = conversion[detect_language(translation['text'])[0].upper()]
+    text_translated = text_to_text(translation['text'], language_in, translation['language'])
     await update.message.reply_text(text_translated)
     return ConversationHandler.END
 
@@ -210,6 +213,7 @@ def main() -> None:
     """Start the bot."""
     # Create the Application and pass it your bot's token.
     application = Application.builder().token(TELEGRAM_KEY).build()
+
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("start", start))
@@ -261,3 +265,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    
+    
