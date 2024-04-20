@@ -10,7 +10,7 @@ Press Ctrl-C on the command line to stop the bot.
 
 import logging
 
-from telegram import ForceReply, Update, ReplyKeyboardMarkup
+from telegram import ForceReply, Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, ConversationHandler
 from keys import TELEGRAM_KEY
 
@@ -30,7 +30,8 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-text, language_out = range(2)
+TEXT, LANGUAGEOUT = range(2)
+
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -166,16 +167,13 @@ async def how_are_you(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await update.message.reply_text(np.random.choice(responses))
     
 async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text('Insert text')
-    user = update.message.from_user
-    return text
+    await update.message.reply_text(
+        "Insert text",
+        reply_markup=ReplyKeyboardRemove(),
+    )
+    return TEXT
     
 async def ask_text(update: Update, context: ContextTypes.DEFAULT_TYPE)-> int :
-    user = update.message.from_user
-    logger.info("text of %s: %s", user.first_name, update.message.text)
-    return language_out
-    
-async def ask_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     user = update.message.from_user
     logger.info("text of %s: %s", user.first_name, update.message.text)
     reply_keyboard = [["FR", "EN", "DE", "IT"]]
@@ -184,17 +182,29 @@ async def ask_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> st
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True, input_field_placeholder="Language ?"
         ),)
+    return LANGUAGEOUT
     
-    return ConversationHandler.END
-    
-
-    
-async def translate(update: Update, context: ContextTypes.DEFAULT_TYPE)-> None:
-    language_in = detect_language(ConversationHandler.states[text])
-    text_translated = text_to_text(ConversationHandler.states[text], language_in, ConversationHandler.states[language_out])
+async def ask_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
+    user = update.message.from_user
+    logger.info("language of %s: %s", user.first_name, update.message.text)
+    language_in = detect_language(ConversationHandler.states[TEXT])
+    text_translated = text_to_text(ConversationHandler.states[TEXT], language_in, ConversationHandler.states[LANGUAGEOUT])
     await update.message.reply_text(text_translated)
     return ConversationHandler.END
-    
+
+
+
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Cancels and ends the conversation."""
+    user = update.message.from_user
+    logger.info("User %s canceled the conversation.", user.first_name)
+    await update.message.reply_text(
+        "Bye! I hope we can talk again some day.", reply_markup=ReplyKeyboardRemove()
+    )
+
+    return ConversationHandler.END
+
+
 
 def main() -> None:
     """Start the bot."""
@@ -208,8 +218,6 @@ def main() -> None:
     # menu commands
     application.add_handler(CommandHandler("timer", set_timer))
     application.add_handler(CommandHandler("howareyou", how_are_you))
-    # Start text2text translation
-    application.add_handler(CommandHandler("text2text", text2text))
 
     # on non command i.e message - echo the message on Telegram
     #application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
@@ -237,10 +245,10 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("text2text", text2text)],
         states={
-            text: [MessageHandler(filters.TEXT, ask_language)],
-            language_out: [MessageHandler(filters.Regex("^(FR|EN|DE|IT)$"), ask_language)],
+            TEXT: [MessageHandler(filters.TEXT, ask_text)],
+            LANGUAGEOUT: [MessageHandler(filters.Regex("^(FR|EN|DE|IT)$"), ask_language)],
         },
-        fallbacks=[MessageHandler(filters.COMMAND, translate)],
+        fallbacks=[CommandHandler("cancel", cancel)],
     )
 
     application.add_handler(conv_handler)
